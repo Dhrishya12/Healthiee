@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Healthiee</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f6f9;
+    }
+
+    .header {
+      background: white;
+      padding: 20px 40px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .logo {
+      width: 45px;
+      height: 45px;
+      background: #ffe5e5;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      color: red;
+    }
+
+    .header-text h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .header-text p {
+      margin: 2px 0 0;
+      color: #64748b;
+      font-size: 14px;
+    }
+
+    .container {
+      display: flex;
+      justify-content: center;
+      margin-top: 80px;
+    }
+
+    .card {
+      background: white;
+      width: 700px;
+      padding: 50px;
+      border-radius: 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+
+    .card h2 {
+      margin-bottom: 10px;
+      font-size: 26px;
+      color: #0f172a;
+    }
+
+    .card p {
+      color: #64748b;
+      margin-bottom: 30px;
+    }
+
+    .input-box {
+      display: flex;
+      align-items: center;
+      background: #f1f5f9;
+      border-radius: 12px;
+      padding: 12px 15px;
+      margin-bottom: 20px;
+    }
+
+    .input-box input {
+      border: none;
+      outline: none;
+      background: transparent;
+      width: 100%;
+      font-size: 15px;
+    }
+
+    .button {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      background: #0f172a;
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .button:hover {
+      background: #1e293b;
+    }
+
+    .categories {
+      margin-top: 30px;
+      background: #e2e8f0;
+      padding: 15px;
+      border-radius: 12px;
+      font-size: 14px;
+      color: #1e40af;
+    }
+
+    .result-box {
+      margin-top: 25px;
+      padding: 20px;
+      border-radius: 12px;
+      background: #f8fafc;
+      text-align: left;
+      display: none;
+    }
+
+    .high-risk { color: red; font-weight: bold; }
+    .medium-risk { color: orange; font-weight: bold; }
+    .low-risk { color: green; font-weight: bold; }
+
+  </style>
+</head>
+
+<body>
+
+  <div class="header">
+    <div class="logo">❤</div>
+    <div class="header-text">
+      <h1>Healthiee</h1>
+      <p>Check product safety and ingredient risk levels</p>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <h2>Enter Product Details</h2>
+      <p>Search by product name, ingredient, or manufacturer</p>
+
+      <div class="input-box">
+        <input type="text" id="productInput"
+          placeholder="e.g., Titanium Dioxide, Paracetamol, Hydroquinone..." />
+      </div>
+
+      <button class="button" onclick="checkProduct()">Check Product</button>
+
+      <div class="result-box" id="resultBox"></div>
+
+      <div class="categories">
+        <span>Categories covered:</span>
+        Food Additives, Cosmetics & Personal Care, Pharmaceutical Products
+      </div>
+    </div>
+  </div>
+
+<script>
+async function checkProduct() {
+    const product = document.getElementById("productInput").value.trim();
+    const resultBox = document.getElementById("resultBox");
+
+    if (!product) {
+        alert("Please enter a product name.");
+        return;
+    }
+
+    try {
+        const response = await fetch("http://127.0.0.1:8000/check-product", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ name: product })
+        });
+
+        const data = await response.json();
+
+        resultBox.style.display = "block";
+
+        if (data.error) {
+            resultBox.innerHTML = "<p style='color:red'>" + data.error + "</p>";
+            return;
+        }
+
+        let riskClass = "";
+        if (data.risk_level === "High") riskClass = "high-risk";
+        else if (data.risk_level === "Medium") riskClass = "medium-risk";
+        else riskClass = "low-risk";
+
+        resultBox.innerHTML = `
+            <h3>Product Report</h3>
+            <p><strong>Name:</strong> ${data.name}</p>
+            <p><strong>Risk Level:</strong>
+                <span class="${riskClass}">${data.risk_level}</span>
+            </p>
+            <p><strong>Banned:</strong> ${data.banned ? "Yes" : "No"}</p>
+            <p><strong>Countries Banned In:</strong>
+                ${data.banned_countries ? data.banned_countries.join(", ") : "Not banned"}
+            </p>
+            <p><strong>Reason:</strong>
+                ${data.reason ? data.reason : "No restriction"}
+            </p>
+        `;
+
+    } catch (error) {
+        resultBox.style.display = "block";
+        resultBox.innerHTML = "<p style='color:red'>Server error. Please check backend.</p>";
+    }
+}
+</script>
+
+</body>
+</html>
